@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Daily Diamond — Box Scores</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:wght@400;600;700&family=Inconsolata:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --paper: #fffef9;
+    --ink: #1a1a18;
+    --ink-light: #4a4a45;
+    --ink-faint: #8a8a82;
+    --rule: #c8c3b8;
+    --rule-dark: #8a8580;
+    --accent: #8b1a1a;
+    --accent-hover: #a52525;
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --card-shadow-hover: 0 3px 12px rgba(0,0,0,0.12);
+    --blue: #1a4a8b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--paper);
+    border-bottom: 3px double var(--rule-dark);
+    padding: 1.2rem 1rem 1rem;
+    text-align: center;
+  }
+
+  .masthead {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 0.15em;
+  }
+
+  .masthead-diamond { color: var(--accent); }
+
+  .edition-line {
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+
+  .date-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .date-nav label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-light);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  #datePicker {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.95rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  #datePicker:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .nav-arrow {
+    background: none;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.3rem 0.65rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: var(--ink-light);
+    font-family: 'Source Serif 4', serif;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+
+  .nav-arrow:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .nav-arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .nav-arrow:disabled { opacity: 0.25; cursor: default; pointer-events: none; }
+
+  /* ── STATUS ── */
+  .status-bar {
+    text-align: center;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+  }
+
+  .status-bar.error { color: var(--accent); font-weight: 600; }
+
+  /* ── LOADING SPINNER (CSS-only) ── */
+  .spinner {
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    border: 2px solid var(--rule);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 0.5em;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-msg {
+    padding: 2.5rem;
+    text-align: center;
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+
+  /* ── GAME GRID ── */
+  .game-grid {
+    max-width: 1200px;
+    margin: 1.5rem auto;
+    padding: 0 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1rem;
+  }
+
+  /* ── GAME CARD ── */
+  .game-card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+
+  .game-card:hover { box-shadow: var(--card-shadow-hover); }
+
+  .card-btn {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    background: none;
+    border: none;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+  }
+
+  .card-btn:hover { background: #faf8f2; }
+  .card-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  .card-btn .expand-hint {
+    position: absolute;
+    top: 0.55rem;
+    right: 0.75rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    transition: color 0.2s;
+  }
+
+  .card-btn:hover .expand-hint { color: var(--accent); }
+
+  .game-status-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  .game-status-label.final { color: var(--ink-faint); }
+  .game-status-label.live { color: var(--accent); animation: pulse 1.5s infinite; }
+  .game-status-label.preview { color: var(--blue); }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  /* ── LINESCORE (compact) ── */
+  .linescore-compact,
+  .linescore-compact th,
+  .linescore-compact td {
+    font-family: 'Inconsolata', monospace;
+  }
+
+  .linescore-compact {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+  }
+
+  .linescore-compact th,
+  .linescore-compact td {
+    padding: 0.2rem 0.35rem;
+    text-align: center;
+    min-width: 1.4rem;
+  }
+
+  .linescore-compact thead th {
+    font-size: 0.62rem;
+    color: var(--ink-faint);
+    font-weight: 500;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .linescore-compact .team-abbr {
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding-right: 0.75rem;
+    color: var(--ink);
+  }
+
+  .linescore-compact .rhe-col {
+    font-weight: 700;
+    border-left: 1px solid var(--rule);
+    min-width: 1.8rem;
+  }
+
+  .linescore-compact .winner .rhe-col:first-of-type { color: var(--accent); }
+
+  /* ── NATIVE DIALOG ── */
+  dialog {
+    padding: 0;
+    margin: auto;
+    border: 1px solid var(--rule-dark);
+    border-radius: 6px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.25);
+    width: min(780px, calc(100vw - 2rem));
+    max-height: 90vh;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    overflow: hidden;
+  }
+
+  dialog[open] {
+    display: flex;
+    flex-direction: column;
+    animation: modalIn 0.25s ease;
+  }
+
+  dialog::backdrop {
+    background: rgba(20, 18, 15, 0.55);
+    backdrop-filter: blur(3px);
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  dialog .dialog-close {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--ink-faint);
+    line-height: 1;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    transition: all 0.15s;
+    z-index: 10;
+  }
+
+  dialog .dialog-close:hover { color: var(--accent); background: rgba(0,0,0,0.05); }
+  dialog .dialog-close:focus-visible { outline: 2px solid var(--accent); }
+
+  .dialog-header {
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 2px solid var(--rule-dark);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .dialog-body {
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* ── BACK BUTTON ── */
+  .modal-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: none;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.25rem 0.7rem;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.78rem;
+    color: var(--ink-light);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 0.5rem;
+  }
+
+  .modal-back:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .modal-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* ── BOX SECTIONS ── */
+  .box-section {
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .box-section:last-child { border-bottom: none; }
+
+  .box-section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 0.25rem;
+  }
+
+  /* ── STAT TABLE ── */
+  .stat-table,
+  .stat-table th,
+  .stat-table td {
+    font-family: 'Inconsolata', monospace;
+  }
+
+  .stat-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.72rem;
+    line-height: 1.5;
+  }
+
+  .stat-table thead th {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 600;
+    padding: 0.2rem 0.3rem;
+    text-align: right;
+    border-bottom: 1px solid var(--rule);
+    letter-spacing: 0.05em;
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+  }
+
+  .stat-table thead th:first-child { text-align: left; }
+  .stat-table th.col-left { text-align: left; }
+
+  .stat-table td {
+    padding: 0.18rem 0.3rem;
+    text-align: right;
+    border-bottom: 1px dotted #e8e4dc;
+  }
+
+  .stat-table td:first-child { text-align: left; }
+  .stat-table td.col-left { text-align: left; white-space: nowrap; }
+  .stat-table tbody tr:last-child td { border-bottom: none; }
+
+  .stat-table .player-name {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 0.78rem;
+  }
+
+  /* Player links as buttons with event delegation */
+  .player-link {
+    background: none;
+    border: none;
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: var(--ink);
+    cursor: pointer;
+    padding: 0;
+    border-bottom: 1px dashed var(--rule);
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .player-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .player-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .stat-table .position {
+    color: var(--ink-faint);
+    font-size: 0.65rem;
+    margin-left: 0.25rem;
+  }
+
+  .stat-table .totals-row td {
+    font-weight: 700;
+    border-top: 1px solid var(--rule-dark);
+    border-bottom: none;
+  }
+
+  .stat-table tr.highlight-row { background: #f5efe0; }
+  .stat-table tr.highlight-row td { font-weight: 700; }
+
+  /* ── GAME NOTES ── */
+  .game-notes {
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: var(--ink-light);
+  }
+
+  .game-notes .note-label {
+    font-weight: 700;
+    color: var(--ink);
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+  }
+
+  .game-notes p { margin-bottom: 0.2rem; }
+
+  /* ── PLAYER HEADER ── */
+  .player-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .player-header-name {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: 1.4rem;
+    color: var(--ink);
+  }
+
+  .player-header-meta {
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+  }
+
+  .player-header-meta a { color: var(--blue); text-decoration: none; }
+  .player-header-meta a:hover { text-decoration: underline; }
+
+  .gamelog-season-label {
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 0.5rem;
+  }
+
+  /* ── EMPTY STATE ── */
+  .no-games {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: 1.1rem;
+    grid-column: 1 / -1;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    border-top: 1px solid var(--rule);
+    margin-top: 2rem;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .game-grid { grid-template-columns: 1fr; }
+    .linescore-compact { font-size: 0.7rem; }
+    .stat-table { font-size: 0.65rem; }
+    dialog { width: calc(100vw - 1rem); }
+    .player-header-name { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="masthead">The Daily <span class="masthead-diamond">Diamond</span></div>
+  <div class="edition-line">Major League Baseball Box Scores</div>
+  <nav class="date-nav" aria-label="Date navigation">
+    <button class="nav-arrow" id="prevDay" aria-label="Previous day">&#8592;</button>
+    <label for="datePicker">Scores for</label>
+    <input type="date" id="datePicker">
+    <button class="nav-arrow" id="nextDay" aria-label="Next day">&#8594;</button>
+  </nav>
+</header>
+
+<div class="status-bar" id="statusBar" role="status" aria-live="polite"></div>
+<main class="game-grid" id="gameGrid"></main>
+
+<!-- Native dialog element — Escape, backdrop click, focus trapping all built-in -->
+<dialog id="gameDialog" aria-label="Game details">
+  <button class="dialog-close" aria-label="Close dialog">&times;</button>
+  <div class="dialog-header" id="dialogHeader"></div>
+  <div class="dialog-body" id="dialogBody"></div>
+</dialog>
+
+<footer>
+  Data via MLB Stats API &middot; The Daily Diamond
+</footer>
+
+<script>
+const MLB_API = 'https://statsapi.mlb.com/api/v1';
+const gameGrid = document.getElementById('gameGrid');
+const statusBar = document.getElementById('statusBar');
+const datePicker = document.getElementById('datePicker');
+const prevDayBtn = document.getElementById('prevDay');
+const nextDayBtn = document.getElementById('nextDay');
+const dialog = document.getElementById('gameDialog');
+const dialogHeader = document.getElementById('dialogHeader');
+const dialogBody = document.getElementById('dialogBody');
+const dialogCloseBtn = dialog.querySelector('.dialog-close');
+
+let currentBoxScoreGame = null;
+let currentBoxScoreDate = null;
+let currentGameType = 'R';
+
+// ── Date helpers ──
+const toDateStr = (d) => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+const todayStr = () => toDateStr(new Date());
+
+function shiftDate(dateStr, days) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + days);
+  return toDateStr(d);
+}
+
+const formatDateReadable = (dateStr) =>
+  new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+const formatDateShort = (dateStr) =>
+  new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+// ── Date nav ──
+datePicker.value = todayStr();
+const updateNavArrows = () => { nextDayBtn.disabled = (datePicker.value >= todayStr()); };
+updateNavArrows();
+
+datePicker.addEventListener('change', () => { updateNavArrows(); loadDay(datePicker.value); });
+prevDayBtn.addEventListener('click', () => { datePicker.value = shiftDate(datePicker.value, -1); updateNavArrows(); loadDay(datePicker.value); });
+nextDayBtn.addEventListener('click', () => { datePicker.value = shiftDate(datePicker.value, 1); updateNavArrows(); loadDay(datePicker.value); });
+
+// ── Dialog (native) ──
+// Close on × button
+dialogCloseBtn.addEventListener('click', () => dialog.close());
+
+// Close on backdrop click — when showModal() is used, clicking the ::backdrop
+// fires a click event where e.target is the <dialog> itself.
+// Clicks on children (buttons, text, etc.) have e.target set to that child.
+dialog.addEventListener('mousedown', (e) => {
+  // Only close if the mousedown started directly on the dialog element (the backdrop area)
+  if (e.target === dialog) dialog.close();
+});
+
+// Event delegation for player links inside the dialog
+dialogBody.addEventListener('click', (e) => {
+  const btn = e.target.closest('.player-link');
+  if (!btn) return;
+  const { playerId, playerName, statType } = btn.dataset;
+  if (playerId) openPlayerGameLog(parseInt(playerId), playerName, statType);
+});
+
+// Event delegation for back button
+dialogHeader.addEventListener('click', (e) => {
+  if (e.target.closest('.modal-back') && currentBoxScoreGame) {
+    showBoxScoreInDialog(currentBoxScoreGame);
+  }
+});
+
+function openDialog(game) {
+  currentBoxScoreGame = game;
+  currentBoxScoreDate = datePicker.value;
+  currentGameType = game.gameType || 'R';
+  showBoxScoreInDialog(game);
+  dialog.showModal();
+}
+
+function showBoxScoreInDialog(game) {
+  const status = game.status.abstractGameState;
+  const statusLabel = getStatusLabel(game);
+  const statusClass = status === 'Final' ? 'final' : status === 'Live' ? 'live' : 'preview';
+  const ls = game.linescore;
+  const away = game.teams.away;
+  const home = game.teams.home;
+  let awayWin = false, homeWin = false;
+  if (status === 'Final' && ls) {
+    awayWin = (ls.teams.away.runs > ls.teams.home.runs);
+    homeWin = !awayWin;
+  }
+
+  dialogHeader.innerHTML = `
+    <div class="game-status-label ${statusClass}">${statusLabel}</div>
+    ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewScore(away, home)}
+  `;
+
+  dialogBody.innerHTML = '<div class="loading-msg"><span class="spinner"></span> Loading box score</div>';
+  dialogBody.scrollTop = 0;
+  loadBoxScore(dialogBody, game.gamePk);
+}
+
+// ── Player game log ──
+async function openPlayerGameLog(playerId, playerName, type) {
+  const season = currentBoxScoreDate ? currentBoxScoreDate.slice(0, 4) : new Date().getFullYear();
+  const group = (type === 'pitching') ? 'pitching' : 'hitting';
+
+  dialogHeader.innerHTML = `
+    <button class="modal-back" aria-label="Back to box score">&#8592; Back to Box Score</button>
+    <div class="player-header">
+      <span class="player-header-name">${playerName}</span>
+      <span class="player-header-meta"><a href="https://www.mlb.com/player/${playerId}" target="_blank" rel="noopener">MLB.com Profile &#8599;</a></span>
+    </div>
+    <div class="gamelog-season-label">${season} Game Log &mdash; ${type === 'pitching' ? 'Pitching' : 'Batting'}</div>
+  `;
+
+  dialogBody.innerHTML = '<div class="loading-msg"><span class="spinner"></span> Loading game log</div>';
+  dialogBody.scrollTop = 0;
+
+  try {
+    const gameTypes = [...new Set([currentGameType, 'R', 'S', 'E', 'W', 'D', 'L', 'F'])];
+    let splits = [];
+    let usedType = currentGameType;
+
+    for (const gt of gameTypes) {
+      const res = await fetch(`${MLB_API}/people/${playerId}/stats?stats=gameLog&group=${group}&season=${season}&gameType=${gt}`);
+      const data = await res.json();
+      splits = data.stats?.[0]?.splits || [];
+      if (splits.length > 0) { usedType = gt; break; }
+    }
+
+    if (splits.length === 0) {
+      dialogBody.innerHTML = '<div class="loading-msg">No game log data available for this season.</div>';
+      return;
+    }
+
+    const typeLabels = { R: 'Regular Season', S: 'Spring Training', E: 'Exhibition', W: 'Wild Card', D: 'Division Series', L: 'League Championship', F: 'World Series' };
+    const label = typeLabels[usedType];
+    if (label) {
+      const el = dialogHeader.querySelector('.gamelog-season-label');
+      if (el) el.innerHTML = `${season} Game Log &mdash; ${type === 'pitching' ? 'Pitching' : 'Batting'} &middot; ${label}`;
+    }
+
+    dialogBody.innerHTML = (type === 'pitching')
+      ? renderPitchingGameLog(splits, currentBoxScoreDate)
+      : renderBattingGameLog(splits, currentBoxScoreDate);
+
+    const highlighted = dialogBody.querySelector('.highlight-row');
+    if (highlighted) setTimeout(() => highlighted.scrollIntoView({ block: 'center', behavior: 'smooth' }), 150);
+  } catch {
+    dialogBody.innerHTML = '<div class="loading-msg" style="color:var(--accent)">Failed to load game log.</div>';
+  }
+}
+
+function renderBattingGameLog(splits, highlightDate) {
+  const rows = splits.map(split => {
+    const s = split.stat;
+    const prefix = split.isHome ? 'vs' : '@';
+    const oppAbbr = split.opponent?.abbreviation || split.opponent?.name || '';
+    const cls = split.date === highlightDate ? ' class="highlight-row"' : '';
+    return `<tr${cls}><td class="col-left">${formatDateShort(split.date)}</td><td class="col-left">${prefix} ${oppAbbr}</td><td>${s.atBats??''}</td><td>${s.runs??''}</td><td>${s.hits??''}</td><td>${s.rbi??''}</td><td>${s.baseOnBalls??''}</td><td>${s.strikeOuts??''}</td><td>${s.homeRuns??''}</td><td>${s.avg??''}</td><td>${s.obp??''}</td><td>${s.ops??''}</td></tr>`;
+  }).join('');
+
+  return `<div class="box-section"><table class="stat-table"><thead><tr><th class="col-left">Date</th><th class="col-left">Opp</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>SO</th><th>HR</th><th>AVG</th><th>OBP</th><th>OPS</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderPitchingGameLog(splits, highlightDate) {
+  const rows = splits.map(split => {
+    const s = split.stat;
+    const prefix = split.isHome ? 'vs' : '@';
+    const oppAbbr = split.opponent?.abbreviation || split.opponent?.name || '';
+    const cls = split.date === highlightDate ? ' class="highlight-row"' : '';
+    return `<tr${cls}><td class="col-left">${formatDateShort(split.date)}</td><td class="col-left">${prefix} ${oppAbbr}</td><td>${s.note??''}</td><td>${s.inningsPitched??''}</td><td>${s.hits??''}</td><td>${s.runs??''}</td><td>${s.earnedRuns??''}</td><td>${s.baseOnBalls??''}</td><td>${s.strikeOuts??''}</td><td>${s.homeRuns??''}</td><td>${s.era??''}</td></tr>`;
+  }).join('');
+
+  return `<div class="box-section"><table class="stat-table"><thead><tr><th class="col-left">Date</th><th class="col-left">Opp</th><th>Dec</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>SO</th><th>HR</th><th>ERA</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+// ── Load day's schedule ──
+async function loadDay(dateStr) {
+  gameGrid.innerHTML = '';
+  statusBar.innerHTML = '<span class="spinner"></span> Loading scores';
+
+  try {
+    const res = await fetch(`${MLB_API}/schedule?date=${dateStr}&sportId=1&hydrate=linescore,team`);
+    const data = await res.json();
+    const games = data.dates?.[0]?.games || [];
+
+    if (games.length === 0) {
+      statusBar.textContent = '';
+      gameGrid.innerHTML = '<div class="no-games">No games scheduled for this date.</div>';
+      return;
+    }
+
+    statusBar.textContent = `${games.length} game${games.length > 1 ? 's' : ''} — ${formatDateReadable(dateStr)}`;
+
+    const fragment = document.createDocumentFragment();
+    games.forEach(game => fragment.appendChild(buildCard(game)));
+    gameGrid.appendChild(fragment);
+  } catch {
+    statusBar.className = 'status-bar error';
+    statusBar.textContent = 'Failed to load scores. Please try again.';
+  }
+}
+
+// ── Build a game card ──
+function buildCard(game) {
+  const card = document.createElement('article');
+  card.className = 'game-card';
+
+  const status = game.status.abstractGameState;
+  const statusLabel = getStatusLabel(game);
+  const statusClass = status === 'Final' ? 'final' : status === 'Live' ? 'live' : 'preview';
+  const ls = game.linescore;
+  const away = game.teams.away;
+  const home = game.teams.home;
+  let awayWin = false, homeWin = false;
+  if (status === 'Final' && ls) {
+    awayWin = (ls.teams.away.runs > ls.teams.home.runs);
+    homeWin = !awayWin;
+  }
+
+  const btn = document.createElement('button');
+  btn.className = 'card-btn';
+  btn.setAttribute('aria-label', `${away.team.name} at ${home.team.name} — ${statusLabel}. Open box score.`);
+  btn.innerHTML = `
+    <div class="game-status-label ${statusClass}">${statusLabel}</div>
+    <span class="expand-hint" aria-hidden="true">Box Score &#8599;</span>
+    ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewScore(away, home)}
+  `;
+
+  btn.addEventListener('click', () => openDialog(game));
+  card.appendChild(btn);
+  return card;
+}
+
+function getStatusLabel(game) {
+  const s = game.status;
+  if (s.abstractGameState === 'Final') {
+    const innings = game.linescore?.currentInning;
+    return (innings && innings !== 9) ? `Final / ${innings}` : 'Final';
+  }
+  if (s.abstractGameState === 'Live') {
+    const ls = game.linescore;
+    return `${ls?.inningHalf === 'Top' ? '▲' : '▼'} ${ls?.currentInningOrdinal || ''}`;
+  }
+  return new Date(game.gameDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function buildLinescoreCompact(ls, away, home, awayWin, homeWin) {
+  const innings = ls.innings || [];
+  const maxInn = Math.max(innings.length, 9);
+  let thRow = '<th></th>';
+  let awayRow = `<td class="team-abbr">${away.team.abbreviation || away.team.teamName}</td>`;
+  let homeRow = `<td class="team-abbr">${home.team.abbreviation || home.team.teamName}</td>`;
+
+  for (let i = 0; i < maxInn; i++) {
+    thRow += `<th>${i+1}</th>`;
+    const inn = innings[i];
+    awayRow += `<td>${inn ? (inn.away?.runs ?? '-') : ''}</td>`;
+    homeRow += `<td>${inn ? (inn.home?.runs ?? '-') : ''}</td>`;
+  }
+
+  const at = ls.teams.away, ht = ls.teams.home;
+  thRow += '<th class="rhe-col">R</th><th class="rhe-col">H</th><th class="rhe-col">E</th>';
+  awayRow += `<td class="rhe-col">${at.runs??''}</td><td class="rhe-col">${at.hits??''}</td><td class="rhe-col">${at.errors??''}</td>`;
+  homeRow += `<td class="rhe-col">${ht.runs??''}</td><td class="rhe-col">${ht.hits??''}</td><td class="rhe-col">${ht.errors??''}</td>`;
+
+  return `<table class="linescore-compact"><thead><tr>${thRow}</tr></thead><tbody><tr class="${awayWin?'winner':''}">${awayRow}</tr><tr class="${homeWin?'winner':''}">${homeRow}</tr></tbody></table>`;
+}
+
+function buildPreviewScore(away, home) {
+  return `<table class="linescore-compact"><tbody><tr><td class="team-abbr">${away.team.abbreviation||away.team.teamName}</td><td>—</td></tr><tr><td class="team-abbr">${home.team.abbreviation||home.team.teamName}</td><td>—</td></tr></tbody></table>`;
+}
+
+// ── Load box score ──
+async function loadBoxScore(targetEl, gamePk) {
+  try {
+    const res = await fetch(`${MLB_API}/game/${gamePk}/boxscore`);
+    const box = await res.json();
+    targetEl.innerHTML = renderBoxScore(box);
+  } catch {
+    targetEl.innerHTML = '<div class="loading-msg" style="color:var(--accent)">Failed to load box score.</div>';
+  }
+}
+
+function renderBoxScore(box) {
+  const { away, home } = box.teams;
+  return renderBatting(away) + renderBatting(home) + renderPitching(away) + renderPitching(home) + renderGameNotes(box);
+}
+
+function playerBtn(pid, name, type) {
+  const escaped = name.replace(/"/g, '&quot;');
+  return `<button class="player-link" data-player-id="${pid}" data-player-name="${escaped}" data-stat-type="${type}">${name}</button>`;
+}
+
+function renderBatting(teamData) {
+  const batters = teamData.batters || [];
+  const players = teamData.players || {};
+  const info = teamData.info || [];
+  let rows = '';
+
+  for (const pid of batters) {
+    const p = players[`ID${pid}`];
+    if (!p?.battingOrder) continue;
+    const s = p.stats?.batting || {};
+    const name = p.person?.fullName || `Player ${pid}`;
+    const pos = p.position?.abbreviation || '';
+    const indent = (p.battingOrder && !p.battingOrder.endsWith('00')) ? '&nbsp;&nbsp;' : '';
+    rows += `<tr><td class="player-name">${indent}${playerBtn(pid, name, 'batting')} <span class="position">${pos}</span></td><td>${s.plateAppearances??''}</td><td>${s.atBats??''}</td><td>${s.runs??''}</td><td>${s.hits??''}</td><td>${s.rbi??''}</td><td>${s.baseOnBalls??''}</td><td>${s.strikeOuts??''}</td></tr>`;
+  }
+
+  const t = teamData.teamStats?.batting || {};
+  rows += `<tr class="totals-row"><td>Totals</td><td>${t.plateAppearances??''}</td><td>${t.atBats??''}</td><td>${t.runs??''}</td><td>${t.hits??''}</td><td>${t.rbi??''}</td><td>${t.baseOnBalls??''}</td><td>${t.strikeOuts??''}</td></tr>`;
+
+  return `<div class="box-section"><div class="box-section-title">${teamData.team.name} — Batting</div><table class="stat-table"><thead><tr><th>Batter</th><th>PA</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>SO</th></tr></thead><tbody>${rows}</tbody></table>${renderBattingNotes(info)}</div>`;
+}
+
+function renderBattingNotes(info) {
+  if (!info?.length) return '';
+  let html = '<div class="game-notes" style="margin-top:0.5rem">';
+  for (const section of info) {
+    if (!section.fieldList?.length) continue;
+    // Each section (BATTING, BASERUNNING, FIELDING) has a fieldList
+    // where each entry has a label (e.g. "2B", "HR") and a value (the details)
+    for (const field of section.fieldList) {
+      if (field.label && field.value) {
+        html += `<p><span class="note-label">${field.label}:</span> ${field.value}</p>`;
+      } else if (field.label) {
+        html += `<p><span class="note-label">${section.title}:</span> ${field.label}</p>`;
+      }
+    }
+  }
+  return html + '</div>';
+}
+
+function renderPitching(teamData) {
+  const pitchers = teamData.pitchers || [];
+  const players = teamData.players || {};
+  let rows = '';
+
+  for (const pid of pitchers) {
+    const p = players[`ID${pid}`];
+    if (!p) continue;
+    const s = p.stats?.pitching || {};
+    const name = p.person?.fullName || `Player ${pid}`;
+    const note = p.note || '';
+    rows += `<tr><td class="player-name">${playerBtn(pid, name, 'pitching')}${note ? ` <span class="position">${note}</span>` : ''}</td><td>${s.inningsPitched??''}</td><td>${s.hits??''}</td><td>${s.runs??''}</td><td>${s.earnedRuns??''}</td><td>${s.baseOnBalls??''}</td><td>${s.strikeOuts??''}</td><td>${s.homeRuns??''}</td><td>${s.era??''}</td></tr>`;
+  }
+
+  const t = teamData.teamStats?.pitching || {};
+  rows += `<tr class="totals-row"><td>Totals</td><td>${t.inningsPitched??''}</td><td>${t.hits??''}</td><td>${t.runs??''}</td><td>${t.earnedRuns??''}</td><td>${t.baseOnBalls??''}</td><td>${t.strikeOuts??''}</td><td>${t.homeRuns??''}</td><td></td></tr>`;
+
+  return `<div class="box-section"><div class="box-section-title">${teamData.team.name} — Pitching</div><table class="stat-table"><thead><tr><th>Pitcher</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>SO</th><th>HR</th><th>ERA</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderGameNotes(box) {
+  const info = box.info || [];
+  if (!info.length) return '';
+  let html = '';
+  for (const item of info) {
+    if (item.label && item.value) html += `<p><span class="note-label">${item.label}:</span> ${item.value}</p>`;
+  }
+  return html ? `<div class="box-section"><div class="box-section-title">Game Info</div><div class="game-notes">${html}</div></div>` : '';
+}
+
+// ── Init ──
+loadDay(datePicker.value);
+</script>
+</body>
+</html>
