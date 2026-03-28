@@ -838,9 +838,16 @@ function renderBatting(teamData) {
 function renderBattingNotes(info) {
   if (!info?.length) return '';
   let html = '<div class="game-notes" style="margin-top:0.5rem">';
-  for (const s of info) {
-    if (s.fieldList?.length) {
-      html += `<p><span class="note-label">${s.title}:</span> ${s.fieldList.map(f => f.value || f.label).join('; ')}</p>`;
+  for (const section of info) {
+    if (!section.fieldList?.length) continue;
+    // Each section (BATTING, BASERUNNING, FIELDING) has a fieldList
+    // where each entry has a label (e.g. "2B", "HR") and a value (the details)
+    for (const field of section.fieldList) {
+      if (field.label && field.value) {
+        html += `<p><span class="note-label">${field.label}:</span> ${field.value}</p>`;
+      } else if (field.label) {
+        html += `<p><span class="note-label">${section.title}:</span> ${field.label}</p>`;
+      }
     }
   }
   return html + '</div>';
