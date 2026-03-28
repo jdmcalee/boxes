@@ -30,6 +30,7 @@
     min-height: 100vh;
   }
 
+  /* ── HEADER ── */
   header {
     background: var(--paper);
     border-bottom: 3px double var(--rule-dark);
@@ -83,7 +84,7 @@
     cursor: pointer;
   }
 
-  #datePicker:focus { outline: 2px solid var(--accent); }
+  #datePicker:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
   .nav-arrow {
     background: none;
@@ -98,18 +99,11 @@
     line-height: 1;
   }
 
-  .nav-arrow:hover {
-    background: var(--ink);
-    color: var(--paper);
-    border-color: var(--ink);
-  }
+  .nav-arrow:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .nav-arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .nav-arrow:disabled { opacity: 0.25; cursor: default; pointer-events: none; }
 
-  .nav-arrow:disabled {
-    opacity: 0.25;
-    cursor: default;
-    pointer-events: none;
-  }
-
+  /* ── STATUS ── */
   .status-bar {
     text-align: center;
     padding: 0.6rem 1rem;
@@ -119,18 +113,29 @@
 
   .status-bar.error { color: var(--accent); font-weight: 600; }
 
-  .loading-dots::after {
-    content: '';
-    animation: dots 1.2s steps(4) infinite;
+  /* ── LOADING SPINNER (CSS-only) ── */
+  .spinner {
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    border: 2px solid var(--rule);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 0.5em;
   }
 
-  @keyframes dots {
-    0% { content: ''; }
-    25% { content: '.'; }
-    50% { content: '..'; }
-    75% { content: '...'; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-msg {
+    padding: 2.5rem;
+    text-align: center;
+    color: var(--ink-faint);
+    font-style: italic;
   }
 
+  /* ── GAME GRID ── */
   .game-grid {
     max-width: 1200px;
     margin: 1.5rem auto;
@@ -140,6 +145,7 @@
     gap: 1rem;
   }
 
+  /* ── GAME CARD ── */
   .game-card {
     background: var(--paper);
     border: 1px solid var(--rule);
@@ -151,16 +157,24 @@
 
   .game-card:hover { box-shadow: var(--card-shadow-hover); }
 
-  .card-header {
+  .card-btn {
+    display: block;
+    width: 100%;
     padding: 0.75rem 1rem;
     cursor: pointer;
     user-select: none;
     position: relative;
+    background: none;
+    border: none;
+    text-align: left;
+    font: inherit;
+    color: inherit;
   }
 
-  .card-header:hover { background: #faf8f2; }
+  .card-btn:hover { background: #faf8f2; }
+  .card-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
-  .card-header .expand-hint {
+  .card-btn .expand-hint {
     position: absolute;
     top: 0.55rem;
     right: 0.75rem;
@@ -171,7 +185,7 @@
     transition: color 0.2s;
   }
 
-  .card-header:hover .expand-hint { color: var(--accent); }
+  .card-btn:hover .expand-hint { color: var(--accent); }
 
   .game-status-label {
     font-size: 0.68rem;
@@ -187,6 +201,7 @@
 
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
+  /* ── LINESCORE (compact) ── */
   .linescore-compact {
     width: 100%;
     border-collapse: collapse;
@@ -216,13 +231,6 @@
     color: var(--ink);
   }
 
-  .linescore-compact .team-abbr a {
-    color: var(--ink);
-    text-decoration: none;
-  }
-
-  .linescore-compact .team-abbr a:hover { color: var(--accent); }
-
   .linescore-compact .rhe-col {
     font-weight: 700;
     border-left: 1px solid var(--rule);
@@ -231,31 +239,30 @@
 
   .linescore-compact .winner .rhe-col:first-of-type { color: var(--accent); }
 
-  /* ── MODAL ── */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(20, 18, 15, 0.55);
-    backdrop-filter: blur(3px);
-    z-index: 1000;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 3vh 1rem;
-    overflow-y: auto;
-  }
-
-  .modal-overlay.open { display: flex; }
-
-  .modal-box {
-    background: var(--paper);
+  /* ── NATIVE DIALOG ── */
+  dialog {
+    padding: 0;
+    margin: auto;
     border: 1px solid var(--rule-dark);
     border-radius: 6px;
     box-shadow: 0 12px 48px rgba(0,0,0,0.25);
-    width: 100%;
-    max-width: 780px;
-    position: relative;
+    width: min(780px, calc(100vw - 2rem));
+    max-height: 90vh;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    overflow: hidden;
+  }
+
+  dialog[open] {
+    display: flex;
+    flex-direction: column;
     animation: modalIn 0.25s ease;
+  }
+
+  dialog::backdrop {
+    background: rgba(20, 18, 15, 0.55);
+    backdrop-filter: blur(3px);
   }
 
   @keyframes modalIn {
@@ -263,7 +270,7 @@
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
-  .modal-close {
+  dialog .dialog-close {
     position: absolute;
     top: 0.6rem;
     right: 0.75rem;
@@ -279,29 +286,22 @@
     z-index: 10;
   }
 
-  .modal-close:hover {
-    color: var(--accent);
-    background: rgba(0,0,0,0.05);
-  }
+  dialog .dialog-close:hover { color: var(--accent); background: rgba(0,0,0,0.05); }
+  dialog .dialog-close:focus-visible { outline: 2px solid var(--accent); }
 
-  .modal-header {
+  .dialog-header {
     padding: 1rem 1.25rem 0.75rem;
     border-bottom: 2px solid var(--rule-dark);
+    position: relative;
+    flex-shrink: 0;
   }
 
-  .modal-body {
-    max-height: 75vh;
+  .dialog-body {
     overflow-y: auto;
+    flex: 1;
   }
 
-  .modal-body .box-loading {
-    padding: 3rem;
-    text-align: center;
-    color: var(--ink-faint);
-    font-style: italic;
-  }
-
-  /* ── BACK BUTTON (for player view) ── */
+  /* ── BACK BUTTON ── */
   .modal-back {
     display: inline-flex;
     align-items: center;
@@ -318,12 +318,10 @@
     margin-bottom: 0.5rem;
   }
 
-  .modal-back:hover {
-    background: var(--ink);
-    color: var(--paper);
-    border-color: var(--ink);
-  }
+  .modal-back:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .modal-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+  /* ── BOX SECTIONS ── */
   .box-section {
     padding: 0.75rem 1.25rem;
     border-bottom: 1px solid var(--rule);
@@ -343,6 +341,7 @@
     padding-bottom: 0.25rem;
   }
 
+  /* ── STAT TABLE ── */
   .stat-table {
     width: 100%;
     border-collapse: collapse;
@@ -366,6 +365,7 @@
   }
 
   .stat-table thead th:first-child { text-align: left; }
+  .stat-table th.col-left { text-align: left; }
 
   .stat-table td {
     padding: 0.18rem 0.3rem;
@@ -374,6 +374,7 @@
   }
 
   .stat-table td:first-child { text-align: left; }
+  .stat-table td.col-left { text-align: left; white-space: nowrap; }
   .stat-table tbody tr:last-child td { border-bottom: none; }
 
   .stat-table .player-name {
@@ -382,7 +383,7 @@
     font-size: 0.78rem;
   }
 
-  /* Player links are now buttons, not <a> tags */
+  /* Player links as buttons with event delegation */
   .player-link {
     background: none;
     border: none;
@@ -396,10 +397,8 @@
     transition: border-color 0.15s, color 0.15s;
   }
 
-  .player-link:hover {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-  }
+  .player-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .player-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .stat-table .position {
     color: var(--ink-faint);
@@ -413,15 +412,10 @@
     border-bottom: none;
   }
 
-  /* ── HIGHLIGHT ROW (current game in game log) ── */
-  .stat-table tr.highlight-row {
-    background: #f5efe0;
-  }
+  .stat-table tr.highlight-row { background: #f5efe0; }
+  .stat-table tr.highlight-row td { font-weight: 700; }
 
-  .stat-table tr.highlight-row td {
-    font-weight: 700;
-  }
-
+  /* ── GAME NOTES ── */
   .game-notes {
     font-size: 0.78rem;
     line-height: 1.7;
@@ -437,15 +431,6 @@
   }
 
   .game-notes p { margin-bottom: 0.2rem; }
-
-  .no-games {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: var(--ink-faint);
-    font-style: italic;
-    font-size: 1.1rem;
-    grid-column: 1 / -1;
-  }
 
   /* ── PLAYER HEADER ── */
   .player-header {
@@ -467,14 +452,8 @@
     color: var(--ink-faint);
   }
 
-  .player-header-meta a {
-    color: var(--blue);
-    text-decoration: none;
-  }
-
-  .player-header-meta a:hover {
-    text-decoration: underline;
-  }
+  .player-header-meta a { color: var(--blue); text-decoration: none; }
+  .player-header-meta a:hover { text-decoration: underline; }
 
   .gamelog-season-label {
     font-size: 0.75rem;
@@ -484,6 +463,17 @@
     margin-top: 0.5rem;
   }
 
+  /* ── EMPTY STATE ── */
+  .no-games {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: 1.1rem;
+    grid-column: 1 / -1;
+  }
+
+  /* ── FOOTER ── */
   footer {
     text-align: center;
     padding: 2rem 1rem;
@@ -493,12 +483,12 @@
     margin-top: 2rem;
   }
 
+  /* ── RESPONSIVE ── */
   @media (max-width: 600px) {
     .game-grid { grid-template-columns: 1fr; }
     .linescore-compact { font-size: 0.7rem; }
     .stat-table { font-size: 0.65rem; }
-    .modal-overlay { padding: 1vh 0.5rem; }
-    .modal-body { max-height: 82vh; }
+    dialog { width: calc(100vw - 1rem); }
     .player-header-name { font-size: 1.1rem; }
   }
 </style>
@@ -508,26 +498,23 @@
 <header>
   <div class="masthead">The Daily <span class="masthead-diamond">Diamond</span></div>
   <div class="edition-line">Major League Baseball Box Scores</div>
-  <div class="date-nav">
-    <button class="nav-arrow" id="prevDay" title="Previous day">&#8592;</button>
+  <nav class="date-nav" aria-label="Date navigation">
+    <button class="nav-arrow" id="prevDay" aria-label="Previous day">&#8592;</button>
     <label for="datePicker">Scores for</label>
     <input type="date" id="datePicker">
-    <button class="nav-arrow" id="nextDay" title="Next day">&#8594;</button>
-  </div>
+    <button class="nav-arrow" id="nextDay" aria-label="Next day">&#8594;</button>
+  </nav>
 </header>
 
-<div class="status-bar" id="statusBar"></div>
-<div class="game-grid" id="gameGrid"></div>
+<div class="status-bar" id="statusBar" role="status" aria-live="polite"></div>
+<main class="game-grid" id="gameGrid"></main>
 
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal-box" id="modalBox">
-    <button class="modal-close" id="modalClose" title="Close (Esc)">&times;</button>
-    <div class="modal-header" id="modalHeader"></div>
-    <div class="modal-body" id="modalBody">
-      <div class="box-loading"><span class="loading-dots">Loading box score</span></div>
-    </div>
-  </div>
-</div>
+<!-- Native dialog element — Escape, backdrop click, focus trapping all built-in -->
+<dialog id="gameDialog" aria-label="Game details">
+  <button class="dialog-close" aria-label="Close dialog">&times;</button>
+  <div class="dialog-header" id="dialogHeader"></div>
+  <div class="dialog-body" id="dialogBody"></div>
+</dialog>
 
 <footer>
   Data via MLB Stats API &middot; The Daily Diamond
@@ -540,61 +527,76 @@ const statusBar = document.getElementById('statusBar');
 const datePicker = document.getElementById('datePicker');
 const prevDayBtn = document.getElementById('prevDay');
 const nextDayBtn = document.getElementById('nextDay');
-const modalOverlay = document.getElementById('modalOverlay');
-const modalBox = document.getElementById('modalBox');
-const modalClose = document.getElementById('modalClose');
-const modalHeader = document.getElementById('modalHeader');
-const modalBody = document.getElementById('modalBody');
+const dialog = document.getElementById('gameDialog');
+const dialogHeader = document.getElementById('dialogHeader');
+const dialogBody = document.getElementById('dialogBody');
+const dialogCloseBtn = dialog.querySelector('.dialog-close');
 
-// Track current box score state so we can return from player view
 let currentBoxScoreGame = null;
 let currentBoxScoreDate = null;
-let currentGameType = 'R'; // R=regular, S=spring, E=exhibition, W=wildcard, D=division, L=league, F=WS
+let currentGameType = 'R';
 
-function todayStr() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
+// ── Date helpers ──
+const toDateStr = (d) => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+const todayStr = () => toDateStr(new Date());
 
 function shiftDate(dateStr, days) {
   const d = new Date(dateStr + 'T12:00:00');
   d.setDate(d.getDate() + days);
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  return toDateStr(d);
 }
 
-function formatDateReadable(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00');
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-}
+const formatDateReadable = (dateStr) =>
+  new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
-function formatDateShort(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
+const formatDateShort = (dateStr) =>
+  new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
 // ── Date nav ──
 datePicker.value = todayStr();
+const updateNavArrows = () => { nextDayBtn.disabled = (datePicker.value >= todayStr()); };
 updateNavArrows();
 
 datePicker.addEventListener('change', () => { updateNavArrows(); loadDay(datePicker.value); });
 prevDayBtn.addEventListener('click', () => { datePicker.value = shiftDate(datePicker.value, -1); updateNavArrows(); loadDay(datePicker.value); });
 nextDayBtn.addEventListener('click', () => { datePicker.value = shiftDate(datePicker.value, 1); updateNavArrows(); loadDay(datePicker.value); });
 
-function updateNavArrows() {
-  nextDayBtn.disabled = (datePicker.value >= todayStr());
-}
+// ── Dialog (native) ──
+// Close on × button
+dialogCloseBtn.addEventListener('click', () => dialog.close());
 
-// ── Modal ──
-function openModal(game) {
+// Close on backdrop click — when showModal() is used, clicking the ::backdrop
+// fires a click event where e.target is the <dialog> itself.
+// Clicks on children (buttons, text, etc.) have e.target set to that child.
+dialog.addEventListener('mousedown', (e) => {
+  // Only close if the mousedown started directly on the dialog element (the backdrop area)
+  if (e.target === dialog) dialog.close();
+});
+
+// Event delegation for player links inside the dialog
+dialogBody.addEventListener('click', (e) => {
+  const btn = e.target.closest('.player-link');
+  if (!btn) return;
+  const { playerId, playerName, statType } = btn.dataset;
+  if (playerId) openPlayerGameLog(parseInt(playerId), playerName, statType);
+});
+
+// Event delegation for back button
+dialogHeader.addEventListener('click', (e) => {
+  if (e.target.closest('.modal-back') && currentBoxScoreGame) {
+    showBoxScoreInDialog(currentBoxScoreGame);
+  }
+});
+
+function openDialog(game) {
   currentBoxScoreGame = game;
   currentBoxScoreDate = datePicker.value;
   currentGameType = game.gameType || 'R';
-  showBoxScoreInModal(game);
-  modalOverlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  showBoxScoreInDialog(game);
+  dialog.showModal();
 }
 
-function showBoxScoreInModal(game) {
+function showBoxScoreInDialog(game) {
   const status = game.status.abstractGameState;
   const statusLabel = getStatusLabel(game);
   const statusClass = status === 'Final' ? 'final' : status === 'Live' ? 'live' : 'preview';
@@ -607,184 +609,101 @@ function showBoxScoreInModal(game) {
     homeWin = !awayWin;
   }
 
-  modalHeader.innerHTML = `
+  dialogHeader.innerHTML = `
     <div class="game-status-label ${statusClass}">${statusLabel}</div>
-    ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewScore(away, home, game)}
+    ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewScore(away, home)}
   `;
 
-  modalBody.innerHTML = '<div class="box-loading"><span class="loading-dots">Loading box score</span></div>';
-  modalBody.scrollTop = 0;
-  loadBoxScore(modalBody, game.gamePk);
+  dialogBody.innerHTML = '<div class="loading-msg"><span class="spinner"></span> Loading box score</div>';
+  dialogBody.scrollTop = 0;
+  loadBoxScore(dialogBody, game.gamePk);
 }
 
-function closeModal() {
-  modalOverlay.classList.remove('open');
-  document.body.style.overflow = '';
-  currentBoxScoreGame = null;
-}
-
-modalClose.addEventListener('click', closeModal);
-modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modalOverlay.classList.contains('open')) closeModal(); });
-
-// ── Player game log view ──
+// ── Player game log ──
 async function openPlayerGameLog(playerId, playerName, type) {
-  // Determine the season from the current box score date
   const season = currentBoxScoreDate ? currentBoxScoreDate.slice(0, 4) : new Date().getFullYear();
   const group = (type === 'pitching') ? 'pitching' : 'hitting';
 
-  modalHeader.innerHTML = `
-    <button class="modal-back" onclick="returnToBoxScore()">&#8592; Back to Box Score</button>
+  dialogHeader.innerHTML = `
+    <button class="modal-back" aria-label="Back to box score">&#8592; Back to Box Score</button>
     <div class="player-header">
       <span class="player-header-name">${playerName}</span>
-      <span class="player-header-meta"><a href="https://www.mlb.com/player/${playerId}" target="_blank">MLB.com Profile &#8599;</a></span>
+      <span class="player-header-meta"><a href="https://www.mlb.com/player/${playerId}" target="_blank" rel="noopener">MLB.com Profile &#8599;</a></span>
     </div>
     <div class="gamelog-season-label">${season} Game Log &mdash; ${type === 'pitching' ? 'Pitching' : 'Batting'}</div>
   `;
 
-  modalBody.innerHTML = '<div class="box-loading"><span class="loading-dots">Loading game log</span></div>';
-  modalBody.scrollTop = 0;
+  dialogBody.innerHTML = '<div class="loading-msg"><span class="spinner"></span> Loading game log</div>';
+  dialogBody.scrollTop = 0;
 
   try {
-    // Try the current game's type first, then fall back to other types
-    const gameTypes = [currentGameType, 'R', 'S', 'E', 'W', 'D', 'L', 'F'];
-    const uniqueTypes = [...new Set(gameTypes)];
+    const gameTypes = [...new Set([currentGameType, 'R', 'S', 'E', 'W', 'D', 'L', 'F'])];
     let splits = [];
     let usedType = currentGameType;
 
-    for (const gt of uniqueTypes) {
-      const url = `${MLB_API}/people/${playerId}/stats?stats=gameLog&group=${group}&season=${season}&gameType=${gt}`;
-      const res = await fetch(url);
+    for (const gt of gameTypes) {
+      const res = await fetch(`${MLB_API}/people/${playerId}/stats?stats=gameLog&group=${group}&season=${season}&gameType=${gt}`);
       const data = await res.json();
       splits = data.stats?.[0]?.splits || [];
-      if (splits.length > 0) {
-        usedType = gt;
-        break;
-      }
+      if (splits.length > 0) { usedType = gt; break; }
     }
 
     if (splits.length === 0) {
-      modalBody.innerHTML = '<div class="box-loading">No game log data available for this season.</div>';
+      dialogBody.innerHTML = '<div class="loading-msg">No game log data available for this season.</div>';
       return;
     }
 
     const typeLabels = { R: 'Regular Season', S: 'Spring Training', E: 'Exhibition', W: 'Wild Card', D: 'Division Series', L: 'League Championship', F: 'World Series' };
-    const typeLabel = typeLabels[usedType] || '';
-    if (typeLabel) {
-      modalHeader.querySelector('.gamelog-season-label').innerHTML = `${season} Game Log &mdash; ${type === 'pitching' ? 'Pitching' : 'Batting'} &middot; ${typeLabel}`;
+    const label = typeLabels[usedType];
+    if (label) {
+      const el = dialogHeader.querySelector('.gamelog-season-label');
+      if (el) el.innerHTML = `${season} Game Log &mdash; ${type === 'pitching' ? 'Pitching' : 'Batting'} &middot; ${label}`;
     }
 
-    if (type === 'pitching') {
-      modalBody.innerHTML = renderPitchingGameLog(splits, currentBoxScoreDate);
-    } else {
-      modalBody.innerHTML = renderBattingGameLog(splits, currentBoxScoreDate);
-    }
+    dialogBody.innerHTML = (type === 'pitching')
+      ? renderPitchingGameLog(splits, currentBoxScoreDate)
+      : renderBattingGameLog(splits, currentBoxScoreDate);
 
-    // Scroll the highlighted row into view
-    const highlighted = modalBody.querySelector('.highlight-row');
-    if (highlighted) {
-      setTimeout(() => highlighted.scrollIntoView({ block: 'center', behavior: 'smooth' }), 150);
-    }
-  } catch (err) {
-    modalBody.innerHTML = '<div class="box-loading" style="color:var(--accent)">Failed to load game log.</div>';
-    console.error(err);
-  }
-}
-
-function returnToBoxScore() {
-  if (currentBoxScoreGame) {
-    showBoxScoreInModal(currentBoxScoreGame);
+    const highlighted = dialogBody.querySelector('.highlight-row');
+    if (highlighted) setTimeout(() => highlighted.scrollIntoView({ block: 'center', behavior: 'smooth' }), 150);
+  } catch {
+    dialogBody.innerHTML = '<div class="loading-msg" style="color:var(--accent)">Failed to load game log.</div>';
   }
 }
 
 function renderBattingGameLog(splits, highlightDate) {
-  let rows = '';
-  for (const split of splits) {
+  const rows = splits.map(split => {
     const s = split.stat;
-    const date = split.date;
-    const opp = split.opponent?.name || '';
-    const oppAbbr = split.opponent?.abbreviation || opp;
-    const isHome = split.isHome;
-    const prefix = isHome ? 'vs' : '@';
-    const isHighlight = date === highlightDate;
+    const prefix = split.isHome ? 'vs' : '@';
+    const oppAbbr = split.opponent?.abbreviation || split.opponent?.name || '';
+    const cls = split.date === highlightDate ? ' class="highlight-row"' : '';
+    return `<tr${cls}><td class="col-left">${formatDateShort(split.date)}</td><td class="col-left">${prefix} ${oppAbbr}</td><td>${s.atBats??''}</td><td>${s.runs??''}</td><td>${s.hits??''}</td><td>${s.rbi??''}</td><td>${s.baseOnBalls??''}</td><td>${s.strikeOuts??''}</td><td>${s.homeRuns??''}</td><td>${s.avg??''}</td><td>${s.obp??''}</td><td>${s.ops??''}</td></tr>`;
+  }).join('');
 
-    rows += `<tr class="${isHighlight ? 'highlight-row' : ''}">
-      <td style="text-align:left; white-space:nowrap;">${formatDateShort(date)}</td>
-      <td style="text-align:left; white-space:nowrap;">${prefix} ${oppAbbr}</td>
-      <td>${s.atBats ?? ''}</td>
-      <td>${s.runs ?? ''}</td>
-      <td>${s.hits ?? ''}</td>
-      <td>${s.rbi ?? ''}</td>
-      <td>${s.baseOnBalls ?? ''}</td>
-      <td>${s.strikeOuts ?? ''}</td>
-      <td>${s.homeRuns ?? ''}</td>
-      <td>${s.avg ?? ''}</td>
-      <td>${s.obp ?? ''}</td>
-      <td>${s.ops ?? ''}</td>
-    </tr>`;
-  }
-
-  return `<div class="box-section">
-    <table class="stat-table">
-      <thead><tr>
-        <th style="text-align:left">Date</th>
-        <th style="text-align:left">Opp</th>
-        <th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>SO</th><th>HR</th><th>AVG</th><th>OBP</th><th>OPS</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-  </div>`;
+  return `<div class="box-section"><table class="stat-table"><thead><tr><th class="col-left">Date</th><th class="col-left">Opp</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>SO</th><th>HR</th><th>AVG</th><th>OBP</th><th>OPS</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function renderPitchingGameLog(splits, highlightDate) {
-  let rows = '';
-  for (const split of splits) {
+  const rows = splits.map(split => {
     const s = split.stat;
-    const date = split.date;
-    const opp = split.opponent?.name || '';
-    const oppAbbr = split.opponent?.abbreviation || opp;
-    const isHome = split.isHome;
-    const prefix = isHome ? 'vs' : '@';
-    const isHighlight = date === highlightDate;
-    const decision = s.note || '';
+    const prefix = split.isHome ? 'vs' : '@';
+    const oppAbbr = split.opponent?.abbreviation || split.opponent?.name || '';
+    const cls = split.date === highlightDate ? ' class="highlight-row"' : '';
+    return `<tr${cls}><td class="col-left">${formatDateShort(split.date)}</td><td class="col-left">${prefix} ${oppAbbr}</td><td>${s.note??''}</td><td>${s.inningsPitched??''}</td><td>${s.hits??''}</td><td>${s.runs??''}</td><td>${s.earnedRuns??''}</td><td>${s.baseOnBalls??''}</td><td>${s.strikeOuts??''}</td><td>${s.homeRuns??''}</td><td>${s.era??''}</td></tr>`;
+  }).join('');
 
-    rows += `<tr class="${isHighlight ? 'highlight-row' : ''}">
-      <td style="text-align:left; white-space:nowrap;">${formatDateShort(date)}</td>
-      <td style="text-align:left; white-space:nowrap;">${prefix} ${oppAbbr}</td>
-      <td>${decision}</td>
-      <td>${s.inningsPitched ?? ''}</td>
-      <td>${s.hits ?? ''}</td>
-      <td>${s.runs ?? ''}</td>
-      <td>${s.earnedRuns ?? ''}</td>
-      <td>${s.baseOnBalls ?? ''}</td>
-      <td>${s.strikeOuts ?? ''}</td>
-      <td>${s.homeRuns ?? ''}</td>
-      <td>${s.era ?? ''}</td>
-    </tr>`;
-  }
-
-  return `<div class="box-section">
-    <table class="stat-table">
-      <thead><tr>
-        <th style="text-align:left">Date</th>
-        <th style="text-align:left">Opp</th>
-        <th>Dec</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>SO</th><th>HR</th><th>ERA</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-  </div>`;
+  return `<div class="box-section"><table class="stat-table"><thead><tr><th class="col-left">Date</th><th class="col-left">Opp</th><th>Dec</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>SO</th><th>HR</th><th>ERA</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
-// ── Load day ──
+// ── Load day's schedule ──
 async function loadDay(dateStr) {
   gameGrid.innerHTML = '';
-  statusBar.className = 'status-bar';
-  statusBar.innerHTML = '<span class="loading-dots">Loading scores</span>';
+  statusBar.innerHTML = '<span class="spinner"></span> Loading scores';
 
   try {
     const res = await fetch(`${MLB_API}/schedule?date=${dateStr}&sportId=1&hydrate=linescore,team`);
     const data = await res.json();
-    const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
+    const games = data.dates?.[0]?.games || [];
 
     if (games.length === 0) {
       statusBar.textContent = '';
@@ -793,16 +712,19 @@ async function loadDay(dateStr) {
     }
 
     statusBar.textContent = `${games.length} game${games.length > 1 ? 's' : ''} — ${formatDateReadable(dateStr)}`;
-    games.forEach(game => gameGrid.appendChild(buildCard(game)));
-  } catch (err) {
+
+    const fragment = document.createDocumentFragment();
+    games.forEach(game => fragment.appendChild(buildCard(game)));
+    gameGrid.appendChild(fragment);
+  } catch {
     statusBar.className = 'status-bar error';
     statusBar.textContent = 'Failed to load scores. Please try again.';
-    console.error(err);
   }
 }
 
+// ── Build a game card ──
 function buildCard(game) {
-  const card = document.createElement('div');
+  const card = document.createElement('article');
   card.className = 'game-card';
 
   const status = game.status.abstractGameState;
@@ -817,19 +739,17 @@ function buildCard(game) {
     homeWin = !awayWin;
   }
 
-  card.innerHTML = `
-    <div class="card-header">
-      <div class="game-status-label ${statusClass}">${statusLabel}</div>
-      <span class="expand-hint">Box Score &#8599;</span>
-      ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewScore(away, home, game)}
-    </div>
+  const btn = document.createElement('button');
+  btn.className = 'card-btn';
+  btn.setAttribute('aria-label', `${away.team.name} at ${home.team.name} — ${statusLabel}. Open box score.`);
+  btn.innerHTML = `
+    <div class="game-status-label ${statusClass}">${statusLabel}</div>
+    <span class="expand-hint" aria-hidden="true">Box Score &#8599;</span>
+    ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewScore(away, home)}
   `;
 
-  card.querySelector('.card-header').addEventListener('click', (e) => {
-    if (e.target.closest('a')) return;
-    openModal(game);
-  });
-
+  btn.addEventListener('click', () => openDialog(game));
+  card.appendChild(btn);
   return card;
 }
 
@@ -837,61 +757,60 @@ function getStatusLabel(game) {
   const s = game.status;
   if (s.abstractGameState === 'Final') {
     const innings = game.linescore?.currentInning;
-    if (innings && innings !== 9) return `Final / ${innings}`;
-    return 'Final';
+    return (innings && innings !== 9) ? `Final / ${innings}` : 'Final';
   }
   if (s.abstractGameState === 'Live') {
     const ls = game.linescore;
-    const half = ls?.inningHalf === 'Top' ? '▲' : '▼';
-    return `${half} ${ls?.currentInningOrdinal || ''}`;
+    return `${ls?.inningHalf === 'Top' ? '▲' : '▼'} ${ls?.currentInningOrdinal || ''}`;
   }
-  const gt = new Date(game.gameDate);
-  return gt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return new Date(game.gameDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
-
-function teamUrl(id) { return `https://www.mlb.com/team/${id}`; }
 
 function buildLinescoreCompact(ls, away, home, awayWin, homeWin) {
   const innings = ls.innings || [];
   const maxInn = Math.max(innings.length, 9);
   let thRow = '<th></th>';
-  let awayRow = `<td class="team-abbr"><a href="${teamUrl(away.team.id)}" target="_blank" title="${away.team.name}">${away.team.abbreviation || away.team.teamName}</a></td>`;
-  let homeRow = `<td class="team-abbr"><a href="${teamUrl(home.team.id)}" target="_blank" title="${home.team.name}">${home.team.abbreviation || home.team.teamName}</a></td>`;
+  let awayRow = `<td class="team-abbr">${away.team.abbreviation || away.team.teamName}</td>`;
+  let homeRow = `<td class="team-abbr">${home.team.abbreviation || home.team.teamName}</td>`;
+
   for (let i = 0; i < maxInn; i++) {
     thRow += `<th>${i+1}</th>`;
     const inn = innings[i];
     awayRow += `<td>${inn ? (inn.away?.runs ?? '-') : ''}</td>`;
     homeRow += `<td>${inn ? (inn.home?.runs ?? '-') : ''}</td>`;
   }
+
   const at = ls.teams.away, ht = ls.teams.home;
   thRow += '<th class="rhe-col">R</th><th class="rhe-col">H</th><th class="rhe-col">E</th>';
   awayRow += `<td class="rhe-col">${at.runs??''}</td><td class="rhe-col">${at.hits??''}</td><td class="rhe-col">${at.errors??''}</td>`;
   homeRow += `<td class="rhe-col">${ht.runs??''}</td><td class="rhe-col">${ht.hits??''}</td><td class="rhe-col">${ht.errors??''}</td>`;
+
   return `<table class="linescore-compact"><thead><tr>${thRow}</tr></thead><tbody><tr class="${awayWin?'winner':''}">${awayRow}</tr><tr class="${homeWin?'winner':''}">${homeRow}</tr></tbody></table>`;
 }
 
-function buildPreviewScore(away, home, game) {
-  return `<table class="linescore-compact"><tbody><tr><td class="team-abbr"><a href="${teamUrl(away.team.id)}" target="_blank">${away.team.abbreviation||away.team.teamName}</a></td><td>—</td></tr><tr><td class="team-abbr"><a href="${teamUrl(home.team.id)}" target="_blank">${home.team.abbreviation||home.team.teamName}</a></td><td>—</td></tr></tbody></table>`;
+function buildPreviewScore(away, home) {
+  return `<table class="linescore-compact"><tbody><tr><td class="team-abbr">${away.team.abbreviation||away.team.teamName}</td><td>—</td></tr><tr><td class="team-abbr">${home.team.abbreviation||home.team.teamName}</td><td>—</td></tr></tbody></table>`;
 }
 
+// ── Load box score ──
 async function loadBoxScore(targetEl, gamePk) {
   try {
     const res = await fetch(`${MLB_API}/game/${gamePk}/boxscore`);
     const box = await res.json();
     targetEl.innerHTML = renderBoxScore(box);
-  } catch (err) {
-    targetEl.innerHTML = '<div class="box-loading" style="color:var(--accent)">Failed to load box score.</div>';
+  } catch {
+    targetEl.innerHTML = '<div class="loading-msg" style="color:var(--accent)">Failed to load box score.</div>';
   }
 }
 
 function renderBoxScore(box) {
-  const away = box.teams.away, home = box.teams.home;
+  const { away, home } = box.teams;
   return renderBatting(away) + renderBatting(home) + renderPitching(away) + renderPitching(home) + renderGameNotes(box);
 }
 
-function playerButton(pid, name, type) {
-  // type: 'batting' or 'pitching'
-  return `<button class="player-link" onclick="openPlayerGameLog(${pid}, '${name.replace(/'/g, "\\'")}', '${type}')">${name}</button>`;
+function playerBtn(pid, name, type) {
+  const escaped = name.replace(/"/g, '&quot;');
+  return `<button class="player-link" data-player-id="${pid}" data-player-name="${escaped}" data-stat-type="${type}">${name}</button>`;
 }
 
 function renderBatting(teamData) {
@@ -899,26 +818,29 @@ function renderBatting(teamData) {
   const players = teamData.players || {};
   const info = teamData.info || [];
   let rows = '';
+
   for (const pid of batters) {
     const p = players[`ID${pid}`];
-    if (!p || !p.battingOrder) continue;
-    const stats = p.stats?.batting || {};
+    if (!p?.battingOrder) continue;
+    const s = p.stats?.batting || {};
     const name = p.person?.fullName || `Player ${pid}`;
     const pos = p.position?.abbreviation || '';
     const indent = (p.battingOrder && !p.battingOrder.endsWith('00')) ? '&nbsp;&nbsp;' : '';
-    rows += `<tr><td class="player-name">${indent}${playerButton(pid, name, 'batting')} <span class="position">${pos}</span></td><td>${stats.atBats??''}</td><td>${stats.runs??''}</td><td>${stats.hits??''}</td><td>${stats.rbi??''}</td><td>${stats.baseOnBalls??''}</td><td>${stats.strikeOuts??''}</td><td>${stats.avg??''}</td><td>${stats.obp??''}</td><td>${stats.slg??''}</td></tr>`;
+    rows += `<tr><td class="player-name">${indent}${playerBtn(pid, name, 'batting')} <span class="position">${pos}</span></td><td>${s.atBats??''}</td><td>${s.runs??''}</td><td>${s.hits??''}</td><td>${s.rbi??''}</td><td>${s.baseOnBalls??''}</td><td>${s.strikeOuts??''}</td><td>${s.avg??''}</td><td>${s.obp??''}</td><td>${s.slg??''}</td></tr>`;
   }
-  const ts = teamData.teamStats?.batting || {};
-  rows += `<tr class="totals-row"><td>Totals</td><td>${ts.atBats??''}</td><td>${ts.runs??''}</td><td>${ts.hits??''}</td><td>${ts.rbi??''}</td><td>${ts.baseOnBalls??''}</td><td>${ts.strikeOuts??''}</td><td></td><td></td><td></td></tr>`;
+
+  const t = teamData.teamStats?.batting || {};
+  rows += `<tr class="totals-row"><td>Totals</td><td>${t.atBats??''}</td><td>${t.runs??''}</td><td>${t.hits??''}</td><td>${t.rbi??''}</td><td>${t.baseOnBalls??''}</td><td>${t.strikeOuts??''}</td><td></td><td></td><td></td></tr>`;
+
   return `<div class="box-section"><div class="box-section-title">${teamData.team.name} — Batting</div><table class="stat-table"><thead><tr><th>Batter</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>SO</th><th>AVG</th><th>OBP</th><th>SLG</th></tr></thead><tbody>${rows}</tbody></table>${renderBattingNotes(info)}</div>`;
 }
 
 function renderBattingNotes(info) {
-  if (!info || !info.length) return '';
+  if (!info?.length) return '';
   let html = '<div class="game-notes" style="margin-top:0.5rem">';
   for (const s of info) {
     if (s.fieldList?.length) {
-      html += `<p><span class="note-label">${s.title}:</span> ${s.fieldList.map(f=>f.value||f.label).join('; ')}</p>`;
+      html += `<p><span class="note-label">${s.title}:</span> ${s.fieldList.map(f => f.value || f.label).join('; ')}</p>`;
     }
   }
   return html + '</div>';
@@ -928,16 +850,19 @@ function renderPitching(teamData) {
   const pitchers = teamData.pitchers || [];
   const players = teamData.players || {};
   let rows = '';
+
   for (const pid of pitchers) {
     const p = players[`ID${pid}`];
     if (!p) continue;
-    const stats = p.stats?.pitching || {};
+    const s = p.stats?.pitching || {};
     const name = p.person?.fullName || `Player ${pid}`;
     const note = p.note || '';
-    rows += `<tr><td class="player-name">${playerButton(pid, name, 'pitching')}${note?` <span class="position">${note}</span>`:''}</td><td>${stats.inningsPitched??''}</td><td>${stats.hits??''}</td><td>${stats.runs??''}</td><td>${stats.earnedRuns??''}</td><td>${stats.baseOnBalls??''}</td><td>${stats.strikeOuts??''}</td><td>${stats.homeRuns??''}</td><td>${stats.era??''}</td></tr>`;
+    rows += `<tr><td class="player-name">${playerBtn(pid, name, 'pitching')}${note ? ` <span class="position">${note}</span>` : ''}</td><td>${s.inningsPitched??''}</td><td>${s.hits??''}</td><td>${s.runs??''}</td><td>${s.earnedRuns??''}</td><td>${s.baseOnBalls??''}</td><td>${s.strikeOuts??''}</td><td>${s.homeRuns??''}</td><td>${s.era??''}</td></tr>`;
   }
-  const ts = teamData.teamStats?.pitching || {};
-  rows += `<tr class="totals-row"><td>Totals</td><td>${ts.inningsPitched??''}</td><td>${ts.hits??''}</td><td>${ts.runs??''}</td><td>${ts.earnedRuns??''}</td><td>${ts.baseOnBalls??''}</td><td>${ts.strikeOuts??''}</td><td>${ts.homeRuns??''}</td><td></td></tr>`;
+
+  const t = teamData.teamStats?.pitching || {};
+  rows += `<tr class="totals-row"><td>Totals</td><td>${t.inningsPitched??''}</td><td>${t.hits??''}</td><td>${t.runs??''}</td><td>${t.earnedRuns??''}</td><td>${t.baseOnBalls??''}</td><td>${t.strikeOuts??''}</td><td>${t.homeRuns??''}</td><td></td></tr>`;
+
   return `<div class="box-section"><div class="box-section-title">${teamData.team.name} — Pitching</div><table class="stat-table"><thead><tr><th>Pitcher</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>SO</th><th>HR</th><th>ERA</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
@@ -951,6 +876,7 @@ function renderGameNotes(box) {
   return html ? `<div class="box-section"><div class="box-section-title">Game Info</div><div class="game-notes">${html}</div></div>` : '';
 }
 
+// ── Init ──
 loadDay(datePicker.value);
 </script>
 </body>
