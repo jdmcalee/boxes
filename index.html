@@ -826,13 +826,13 @@ function renderBatting(teamData) {
     const name = p.person?.fullName || `Player ${pid}`;
     const pos = p.position?.abbreviation || '';
     const indent = (p.battingOrder && !p.battingOrder.endsWith('00')) ? '&nbsp;&nbsp;' : '';
-    rows += `<tr><td class="player-name">${indent}${playerBtn(pid, name, 'batting')} <span class="position">${pos}</span></td><td>${s.atBats??''}</td><td>${s.runs??''}</td><td>${s.hits??''}</td><td>${s.rbi??''}</td><td>${s.baseOnBalls??''}</td><td>${s.strikeOuts??''}</td><td>${s.avg??''}</td><td>${s.obp??''}</td><td>${s.slg??''}</td></tr>`;
+    rows += `<tr><td class="player-name">${indent}${playerBtn(pid, name, 'batting')} <span class="position">${pos}</span></td><td>${s.plateAppearances??''}</td><td>${s.atBats??''}</td><td>${s.runs??''}</td><td>${s.hits??''}</td><td>${s.rbi??''}</td><td>${s.baseOnBalls??''}</td><td>${s.strikeOuts??''}</td></tr>`;
   }
 
   const t = teamData.teamStats?.batting || {};
-  rows += `<tr class="totals-row"><td>Totals</td><td>${t.atBats??''}</td><td>${t.runs??''}</td><td>${t.hits??''}</td><td>${t.rbi??''}</td><td>${t.baseOnBalls??''}</td><td>${t.strikeOuts??''}</td><td></td><td></td><td></td></tr>`;
+  rows += `<tr class="totals-row"><td>Totals</td><td>${t.plateAppearances??''}</td><td>${t.atBats??''}</td><td>${t.runs??''}</td><td>${t.hits??''}</td><td>${t.rbi??''}</td><td>${t.baseOnBalls??''}</td><td>${t.strikeOuts??''}</td></tr>`;
 
-  return `<div class="box-section"><div class="box-section-title">${teamData.team.name} — Batting</div><table class="stat-table"><thead><tr><th>Batter</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>SO</th><th>AVG</th><th>OBP</th><th>SLG</th></tr></thead><tbody>${rows}</tbody></table>${renderBattingNotes(info)}</div>`;
+  return `<div class="box-section"><div class="box-section-title">${teamData.team.name} — Batting</div><table class="stat-table"><thead><tr><th>Batter</th><th>PA</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>SO</th></tr></thead><tbody>${rows}</tbody></table>${renderBattingNotes(info)}</div>`;
 }
 
 function renderBattingNotes(info) {
