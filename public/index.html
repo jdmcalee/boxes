@@ -205,6 +205,50 @@
   .game-status-label.live { color: var(--accent); animation: pulse 1.5s infinite; }
   .game-status-label.preview { color: var(--blue); }
 
+  .preview-matchup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .preview-team {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .preview-team-info {
+    min-width: 3rem;
+  }
+
+  .preview-abbr {
+    display: block;
+    font-family: 'Inconsolata', monospace;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--ink);
+  }
+
+  .preview-record {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+  }
+
+  .preview-pitcher {
+    font-size: 0.8rem;
+    color: var(--ink-light);
+  }
+
+  .card-broadcast {
+    margin-top: 0.5rem;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    font-family: 'Inconsolata', monospace;
+  }
+
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
   /* ── LINESCORE (compact) ── */
@@ -627,7 +671,7 @@ function showBoxScoreInDialog(game) {
 
   dialogHeader.innerHTML = `
     <div class="game-status-label ${statusClass}">${statusLabel}</div>
-    ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewScore(away, home)}
+    ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewMatchup(away, home, null)}
   `;
 
   dialogBody.innerHTML = '<div class="loading-msg"><span class="spinner"></span> Loading box score</div>';
@@ -717,7 +761,7 @@ async function loadDay(dateStr) {
   statusBar.innerHTML = '<span class="spinner"></span> Loading scores';
 
   try {
-    const res = await fetch(`${MLB_API}/schedule?date=${dateStr}&sportId=1&hydrate=linescore,team`);
+    const res = await fetch(`${MLB_API}/schedule?date=${dateStr}&sportId=1&hydrate=linescore,team,broadcasts,probablePitcher`);
     const data = await res.json();
     const games = data.dates?.[0]?.games || [];
 
@@ -738,6 +782,16 @@ async function loadDay(dateStr) {
   }
 }
 
+// ── Get TV broadcast label for a game ──
+function getBroadcastLabel(game) {
+  const tv = (game.broadcasts || []).filter(b => b.type === 'TV');
+  const national = tv.filter(b => b.isNational);
+  if (national.length) return [...new Set(national.map(b => b.name))].join(' · ');
+  const local = tv.filter(b => !b.isNational);
+  if (local.length) return [...new Set(local.map(b => b.name))].join(' · ');
+  return null;
+}
+
 // ── Build a game card ──
 function buildCard(game) {
   const card = document.createElement('article');
@@ -756,15 +810,19 @@ function buildCard(game) {
   }
 
   const isPreview = status === 'Preview';
+  const broadcastLabel = getBroadcastLabel(game);
 
   if (isPreview) {
-    const div = document.createElement('div');
-    div.className = 'card-btn card-btn-preview';
-    div.innerHTML = `
+    const btn = document.createElement('button');
+    btn.className = 'card-btn';
+    btn.setAttribute('aria-label', `${away.team.name} at ${home.team.name} — ${statusLabel}. Open box score.`);
+    btn.innerHTML = `
       <div class="game-status-label ${statusClass}">${statusLabel}</div>
-      ${ls ? buildLinescoreCompact(ls, away, home, false, false) : buildPreviewScore(away, home)}
+      <span class="expand-hint" aria-hidden="true">Box Score &#8599;</span>
+      ${buildPreviewMatchup(away, home, broadcastLabel)}
     `;
-    card.appendChild(div);
+    btn.addEventListener('click', () => openDialog(game));
+    card.appendChild(btn);
   } else {
     const btn = document.createElement('button');
     btn.className = 'card-btn';
@@ -772,7 +830,7 @@ function buildCard(game) {
     btn.innerHTML = `
       <div class="game-status-label ${statusClass}">${statusLabel}</div>
       <span class="expand-hint" aria-hidden="true">Box Score &#8599;</span>
-      ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewScore(away, home)}
+      ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewMatchup(away, home, null)}
     `;
     btn.addEventListener('click', () => openDialog(game));
     card.appendChild(btn);
@@ -815,8 +873,19 @@ function buildLinescoreCompact(ls, away, home, awayWin, homeWin) {
   return `<table class="linescore-compact"><thead><tr>${thRow}</tr></thead><tbody><tr class="${awayWin?'winner':''}">${awayRow}</tr><tr class="${homeWin?'winner':''}">${homeRow}</tr></tbody></table>`;
 }
 
-function buildPreviewScore(away, home) {
-  return `<table class="linescore-compact"><tbody><tr><td class="team-abbr">${away.team.abbreviation||away.team.teamName}</td><td>—</td></tr><tr><td class="team-abbr">${home.team.abbreviation||home.team.teamName}</td><td>—</td></tr></tbody></table>`;
+function buildPreviewMatchup(away, home, broadcastLabel) {
+  const fmt = t => {
+    const r = t.leagueRecord;
+    const rec = r ? `<div class="preview-record">${r.wins}–${r.losses}</div>` : '';
+    const pitcher = t.probablePitcher?.fullName || 'TBD';
+    const abbr = t.team.abbreviation || t.team.teamName;
+    return `<div class="preview-team">
+      <div class="preview-team-info"><span class="preview-abbr">${abbr}</span>${rec}</div>
+      <span class="preview-pitcher">${pitcher}</span>
+    </div>`;
+  };
+  const tv = broadcastLabel ? `<div class="card-broadcast">${broadcastLabel}</div>` : '';
+  return `<div class="preview-matchup">${fmt(away)}${fmt(home)}</div>${tv}`;
 }
 
 // ── Load box score ──
