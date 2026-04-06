@@ -235,9 +235,20 @@
     color: var(--ink-faint);
   }
 
+  .preview-pitcher-info {
+    display: flex;
+    flex-direction: column;
+  }
+
   .preview-pitcher {
     font-size: 0.8rem;
     color: var(--ink-light);
+  }
+
+  .preview-pitcher-stat {
+    font-family: 'Inconsolata', monospace;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
   }
 
   .card-broadcast {
@@ -773,8 +784,23 @@ async function loadDay(dateStr) {
 
     statusBar.textContent = `${games.length} game${games.length > 1 ? 's' : ''} — ${formatDateReadable(dateStr)}`;
 
+    // Fetch pitcher season stats for all probable pitchers in one batch request
+    const pitcherIds = [...new Set(
+      games.flatMap(g => [g.teams.away.probablePitcher?.id, g.teams.home.probablePitcher?.id].filter(Boolean))
+    )];
+    const pitcherStats = {};
+    if (pitcherIds.length) {
+      const year = dateStr.slice(0, 4);
+      const pRes = await fetch(`${MLB_API}/people?personIds=${pitcherIds.join(',')}&hydrate=stats(group=pitching,type=season,season=${year})`);
+      const pData = await pRes.json();
+      for (const p of pData.people || []) {
+        const stat = p.stats?.[0]?.splits?.[0]?.stat || {};
+        pitcherStats[p.id] = stat;
+      }
+    }
+
     const fragment = document.createDocumentFragment();
-    games.forEach(game => fragment.appendChild(buildCard(game)));
+    games.forEach(game => fragment.appendChild(buildCard(game, pitcherStats)));
     gameGrid.appendChild(fragment);
   } catch {
     statusBar.className = 'status-bar error';
@@ -793,7 +819,7 @@ function getBroadcastLabel(game) {
 }
 
 // ── Build a game card ──
-function buildCard(game) {
+function buildCard(game, pitcherStats = {}) {
   const card = document.createElement('article');
   card.className = 'game-card';
 
@@ -819,7 +845,7 @@ function buildCard(game) {
     btn.innerHTML = `
       <div class="game-status-label ${statusClass}">${statusLabel}</div>
       <span class="expand-hint" aria-hidden="true">Box Score &#8599;</span>
-      ${buildPreviewMatchup(away, home, broadcastLabel)}
+      ${buildPreviewMatchup(away, home, broadcastLabel, pitcherStats)}
     `;
     btn.addEventListener('click', () => openDialog(game));
     card.appendChild(btn);
@@ -830,7 +856,7 @@ function buildCard(game) {
     btn.innerHTML = `
       <div class="game-status-label ${statusClass}">${statusLabel}</div>
       <span class="expand-hint" aria-hidden="true">Box Score &#8599;</span>
-      ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewMatchup(away, home, null)}
+      ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewMatchup(away, home, null, pitcherStats)}
     `;
     btn.addEventListener('click', () => openDialog(game));
     card.appendChild(btn);
@@ -873,15 +899,20 @@ function buildLinescoreCompact(ls, away, home, awayWin, homeWin) {
   return `<table class="linescore-compact"><thead><tr>${thRow}</tr></thead><tbody><tr class="${awayWin?'winner':''}">${awayRow}</tr><tr class="${homeWin?'winner':''}">${homeRow}</tr></tbody></table>`;
 }
 
-function buildPreviewMatchup(away, home, broadcastLabel) {
+function buildPreviewMatchup(away, home, broadcastLabel, pitcherStats = {}) {
   const fmt = t => {
     const r = t.leagueRecord;
     const rec = r ? `<div class="preview-record">${r.wins}–${r.losses}</div>` : '';
-    const pitcher = t.probablePitcher?.fullName || 'TBD';
     const abbr = t.team.abbreviation || t.team.teamName;
+    const pp = t.probablePitcher;
+    const pitcherName = pp?.fullName || 'TBD';
+    const pStat = pp ? pitcherStats[pp.id] : null;
+    const pitcherCaption = pStat
+      ? `<div class="preview-pitcher-stat">${pStat.wins}-${pStat.losses}, ${pStat.era} ERA</div>`
+      : '';
     return `<div class="preview-team">
       <div class="preview-team-info"><span class="preview-abbr">${abbr}</span>${rec}</div>
-      <span class="preview-pitcher">${pitcher}</span>
+      <div class="preview-pitcher-info"><span class="preview-pitcher">${pitcherName}</span>${pitcherCaption}</div>
     </div>`;
   };
   const tv = broadcastLabel ? `<div class="card-broadcast">${broadcastLabel}</div>` : '';
