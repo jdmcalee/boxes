@@ -174,12 +174,6 @@
   .card-btn:hover { background: #faf8f2; }
   .card-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
-  .card-btn-preview {
-    cursor: default;
-  }
-
-  .card-btn-preview:hover { background: none; }
-
   .card-btn .expand-hint {
     position: absolute;
     top: 0.55rem;
@@ -607,6 +601,8 @@ let currentBoxScoreGame = null;
 let currentBoxScoreDate = null;
 let currentGameType = 'R';
 
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
 // ── Date helpers ──
 const toDateStr = (d) => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 const todayStr = () => toDateStr(new Date());
@@ -782,6 +778,7 @@ async function loadDay(dateStr) {
       return;
     }
 
+    statusBar.className = 'status-bar';
     statusBar.textContent = `${games.length} game${games.length > 1 ? 's' : ''} — ${formatDateReadable(dateStr)}`;
 
     // Fetch pitcher season stats for all probable pitchers in one batch request
@@ -811,9 +808,9 @@ async function loadDay(dateStr) {
 // ── Get TV broadcast label for a game ──
 function getBroadcastLabel(game) {
   const tv = (game.broadcasts || []).filter(b => b.type === 'TV');
-  const national = tv.filter(b => b.isNational);
+  const national = tv.filter(b => b.homeAway === 'national');
   if (national.length) return [...new Set(national.map(b => b.name))].join(' · ');
-  const local = tv.filter(b => !b.isNational);
+  const local = tv.filter(b => b.homeAway !== 'national');
   if (local.length) return [...new Set(local.map(b => b.name))].join(' · ');
   return null;
 }
@@ -838,29 +835,16 @@ function buildCard(game, pitcherStats = {}) {
   const isPreview = status === 'Preview';
   const broadcastLabel = getBroadcastLabel(game);
 
-  if (isPreview) {
-    const btn = document.createElement('button');
-    btn.className = 'card-btn';
-    btn.setAttribute('aria-label', `${away.team.name} at ${home.team.name} — ${statusLabel}. Open box score.`);
-    btn.innerHTML = `
-      <div class="game-status-label ${statusClass}">${statusLabel}</div>
-      <span class="expand-hint" aria-hidden="true">Box Score &#8599;</span>
-      ${buildPreviewMatchup(away, home, broadcastLabel, pitcherStats)}
-    `;
-    btn.addEventListener('click', () => openDialog(game));
-    card.appendChild(btn);
-  } else {
-    const btn = document.createElement('button');
-    btn.className = 'card-btn';
-    btn.setAttribute('aria-label', `${away.team.name} at ${home.team.name} — ${statusLabel}. Open box score.`);
-    btn.innerHTML = `
-      <div class="game-status-label ${statusClass}">${statusLabel}</div>
-      <span class="expand-hint" aria-hidden="true">Box Score &#8599;</span>
-      ${ls ? buildLinescoreCompact(ls, away, home, awayWin, homeWin) : buildPreviewMatchup(away, home, null, pitcherStats)}
-    `;
-    btn.addEventListener('click', () => openDialog(game));
-    card.appendChild(btn);
-  }
+  const btn = document.createElement('button');
+  btn.className = 'card-btn';
+  btn.setAttribute('aria-label', `${away.team.name} at ${home.team.name} — ${statusLabel}. Open box score.`);
+  btn.innerHTML = `
+    <div class="game-status-label ${statusClass}">${statusLabel}</div>
+    <span class="expand-hint" aria-hidden="true">Box Score &#8599;</span>
+    ${(isPreview || !ls) ? buildPreviewMatchup(away, home, isPreview ? broadcastLabel : null, pitcherStats) : buildLinescoreCompact(ls, away, home, awayWin, homeWin)}
+  `;
+  btn.addEventListener('click', () => openDialog(game));
+  card.appendChild(btn);
   return card;
 }
 
@@ -881,8 +865,8 @@ function buildLinescoreCompact(ls, away, home, awayWin, homeWin) {
   const innings = ls.innings || [];
   const maxInn = Math.max(innings.length, 9);
   let thRow = '<th></th>';
-  let awayRow = `<td class="team-abbr">${away.team.abbreviation || away.team.teamName}</td>`;
-  let homeRow = `<td class="team-abbr">${home.team.abbreviation || home.team.teamName}</td>`;
+  let awayRow = `<td class="team-abbr">${esc(away.team.abbreviation || away.team.teamName)}</td>`;
+  let homeRow = `<td class="team-abbr">${esc(home.team.abbreviation || home.team.teamName)}</td>`;
 
   for (let i = 0; i < maxInn; i++) {
     thRow += `<th>${i+1}</th>`;
@@ -902,13 +886,13 @@ function buildLinescoreCompact(ls, away, home, awayWin, homeWin) {
 function buildPreviewMatchup(away, home, broadcastLabel, pitcherStats = {}) {
   const fmt = t => {
     const r = t.leagueRecord;
-    const rec = r ? `<div class="preview-record">${r.wins}–${r.losses}</div>` : '';
-    const abbr = t.team.abbreviation || t.team.teamName;
+    const rec = r ? `<div class="preview-record">${r.wins ?? 0}–${r.losses ?? 0}</div>` : '';
+    const abbr = esc(t.team.abbreviation || t.team.teamName);
     const pp = t.probablePitcher;
-    const pitcherName = pp?.fullName || 'TBD';
+    const pitcherName = esc(pp?.fullName || 'TBD');
     const pStat = pp ? pitcherStats[pp.id] : null;
     const pitcherCaption = pStat
-      ? `<div class="preview-pitcher-stat">${pStat.wins}-${pStat.losses}, ${pStat.era} ERA</div>`
+      ? `<div class="preview-pitcher-stat">${pStat.wins ?? 0}-${pStat.losses ?? 0}, ${pStat.era ?? '0.00'} ERA</div>`
       : '';
     return `<div class="preview-team">
       <div class="preview-team-info"><span class="preview-abbr">${abbr}</span>${rec}</div>
@@ -936,8 +920,8 @@ function renderBoxScore(box) {
 }
 
 function playerBtn(pid, name, type) {
-  const escaped = name.replace(/"/g, '&quot;');
-  return `<button class="player-link" data-player-id="${pid}" data-player-name="${escaped}" data-stat-type="${type}">${name}</button>`;
+  const escapedName = esc(name);
+  return `<button class="player-link" data-player-id="${pid}" data-player-name="${escapedName}" data-stat-type="${type}">${escapedName}</button>`;
 }
 
 function renderBatting(teamData) {
@@ -964,20 +948,20 @@ function renderBatting(teamData) {
 
 function renderBattingNotes(info) {
   if (!info?.length) return '';
-  let html = '<div class="game-notes" style="margin-top:0.5rem">';
+  let html = '';
   for (const section of info) {
     if (!section.fieldList?.length) continue;
     // Each section (BATTING, BASERUNNING, FIELDING) has a fieldList
     // where each entry has a label (e.g. "2B", "HR") and a value (the details)
     for (const field of section.fieldList) {
       if (field.label && field.value) {
-        html += `<p><span class="note-label">${field.label}:</span> ${field.value}</p>`;
+        html += `<p><span class="note-label">${esc(field.label)}:</span> ${esc(field.value)}</p>`;
       } else if (field.label) {
-        html += `<p><span class="note-label">${section.title}:</span> ${field.label}</p>`;
+        html += `<p><span class="note-label">${esc(section.title)}:</span> ${esc(field.label)}</p>`;
       }
     }
   }
-  return html + '</div>';
+  return html ? `<div class="game-notes" style="margin-top:0.5rem">${html}</div>` : '';
 }
 
 function renderPitching(teamData) {
@@ -1005,7 +989,7 @@ function renderGameNotes(box) {
   if (!info.length) return '';
   let html = '';
   for (const item of info) {
-    if (item.label && item.value) html += `<p><span class="note-label">${item.label}:</span> ${item.value}</p>`;
+    if (item.label && item.value) html += `<p><span class="note-label">${esc(item.label)}:</span> ${esc(item.value)}</p>`;
   }
   return html ? `<div class="box-section"><div class="box-section-title">Game Info</div><div class="game-notes">${html}</div></div>` : '';
 }
