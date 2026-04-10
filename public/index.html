@@ -808,11 +808,12 @@ async function loadDay(dateStr) {
 
 // ── Get TV broadcast label for a game ──
 function getBroadcastLabel(game) {
+  const cleanName = s => s.replace(/\s+presented by\b.*/i, '').trim();
   const tv = (game.broadcasts || []).filter(b => b.type === 'TV');
   const national = tv.filter(b => b.homeAway === 'national');
-  if (national.length) return [...new Set(national.map(b => b.name))].join(' · ');
+  if (national.length) return [...new Set(national.map(b => cleanName(b.name)))].join(' · ');
   const local = tv.filter(b => b.homeAway !== 'national');
-  if (local.length) return [...new Set(local.map(b => b.name))].join(' · ');
+  if (local.length) return [...new Set(local.map(b => cleanName(b.name)))].join(' · ');
   return null;
 }
 
